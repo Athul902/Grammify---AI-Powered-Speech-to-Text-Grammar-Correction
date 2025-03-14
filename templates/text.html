@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Grammar Correction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+            background-color: #121212;
+            color: #f5f5f5;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .nav-container {
+            margin-bottom: 20px;
+        }
+        .nav-button {
+            display: inline-block;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 10px;
+            text-decoration: none;
+            color: white;
+            background-color: #1E88E5;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .nav-button:hover {
+            background-color: #1565C0;
+        }
+        textarea {
+            width: 80%;
+            height: 150px;
+            margin: 20px 0;
+            background-color: #1e1e1e;
+            color: white;
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .file-upload {
+            margin: 15px 0;
+        }
+        .btn {
+            font-size: 18px;
+            padding: 12px 24px;
+            margin-top: 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+	    /* Centering Download Button */
+    	.download-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        #correct-btn {
+            background-color: #1E88E5;
+            color: white;
+        }
+        #correct-btn:hover {
+            background-color: #1565C0;
+        }
+        #download-btn {
+            background-color: #4CAF50;
+            color: white;
+            display: none;
+        }
+        #download-btn:hover {
+            background-color: #388E3C;
+        }
+        #output-container {
+            margin-top: 30px;
+            text-align: left;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 5px;
+        }
+        #loading {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            display: none; /* Hidden initially */
+        }
+    </style>
+</head>
+<body>
+    <h1>Text Grammar Correction</h1>
+
+    <!-- Navigation Buttons -->
+    <div class="nav-container">
+        <a href="/" class="nav-button">🏠 Home</a>
+        <a href="/speech" class="nav-button">🎤 Speech-to-Text</a>
+    </div>
+
+    <!-- Text Input -->
+    <textarea id="text_input" placeholder="Type your text here..."></textarea>
+
+    <!-- File Upload -->
+    <div class="file-upload">
+        <input type="file" id="file_input" accept=".txt, .pdf">
+    </div>
+
+    <!-- Correct Button -->
+    <button id="correct-btn" class="btn" onclick="processText()">Correct Text</button>
+
+    <!-- Loading Indicator -->
+    <p id="loading">⏳ Correcting... Please wait</p>
+
+    <!-- Output -->
+    <div id="output-container">
+        <p><strong>Corrected Output:</strong></p>
+        <p id="corrected_output"></p>
+    </div>
+
+    <!-- Download Button -->
+    <div class="download-container">
+        <button id="download-btn" class="btn" onclick="downloadFile()">Download Corrected Text</button>
+    </div>
+
+
+    <script>
+        function processText() {
+            let formData = new FormData();
+            let textInput = document.getElementById("text_input").value;
+            let fileInput = document.getElementById("file_input").files[0];
+            let correctBtn = document.getElementById("correct-btn");
+            let loadingIndicator = document.getElementById("loading");
+
+            if (textInput) {
+                formData.append("text_input", textInput);
+            } else if (fileInput) {
+                formData.append("file", fileInput);
+            } else {
+                alert("Please enter text or upload a file.");
+                return;
+            }
+
+            // Show loading indicator and disable button
+            correctBtn.disabled = true;
+            correctBtn.style.backgroundColor = "#555";
+            loadingIndicator.style.display = "block";
+
+            fetch("/correct_text", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("corrected_output").innerText = data.corrected_text;
+                document.getElementById("download-btn").style.display = "block";
+
+                // Hide loading indicator and enable button
+                loadingIndicator.style.display = "none";
+                correctBtn.disabled = false;
+                correctBtn.style.backgroundColor = "#1E88E5";
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                loadingIndicator.style.display = "none";
+                correctBtn.disabled = false;
+                correctBtn.style.backgroundColor = "#1E88E5";
+            });
+        }
+
+        function downloadFile() {
+            window.location.href = "/download";
+        }
+    </script>
+
+</body>
+</html>

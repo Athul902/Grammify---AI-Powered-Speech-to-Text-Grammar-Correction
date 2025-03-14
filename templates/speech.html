@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-Text & Grammar Correction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+            background-color: #121212;
+            color: #f5f5f5;
+        }
+        .nav-button {
+            display: inline-block;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 10px;
+            text-decoration: none;
+            color: white;
+            background-color: #1E88E5;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .nav-button:hover {
+            background-color: #1565C0;
+        }
+        .button-container {
+            margin-top: 30px;
+        }
+        .record-button {
+            font-size: 18px;
+            padding: 12px 24px;
+            margin: 10px;
+            cursor: pointer;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        #start {
+            background-color: #E53935; /* Red for Start */
+        }
+        #start:hover, #start.recording {
+            background-color: #C62828;
+        }
+        #stop {
+            background-color: #43A047; /* Green for Stop */
+        }
+        #stop:hover, #stop.stopped {
+            background-color: #2E7D32;
+        }
+        #status {
+            font-size: 18px;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #FFD700; /* Yellow text for status */
+        }
+    </style>
+</head>
+<body>
+    <h1>Speech-to-Text & Grammar Correction</h1>
+
+    <!-- Navigation Buttons -->
+    <a href="/" class="nav-button">🏠 Home</a>
+    <a href="/text" class="nav-button">📝 Text Correction</a>
+
+    <!-- Recording Buttons -->
+    <div class="button-container">
+        <button id="start" class="record-button">🎙 Start Recording</button>
+        <button id="stop" class="record-button" disabled>⏹ Stop Recording</button>
+    </div>
+
+    <!-- Recording Status -->
+    <p id="status">Ready to record</p>
+
+    <p><strong>Original Transcription:</strong></p>
+    <p id="original_output"></p>
+
+    <p><strong>Corrected Transcription:</strong></p>
+    <p id="corrected_output"></p>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        document.getElementById("start").addEventListener("click", async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+                const formData = new FormData();
+                formData.append("audio", audioBlob);
+
+                const response = await fetch("/transcribe", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+                document.getElementById("original_output").textContent = data.original_text; // Display raw transcription
+                document.getElementById("corrected_output").textContent = data.transcription; // Display corrected text
+            };
+
+            audioChunks = [];
+            mediaRecorder.start();
+
+            // Update button styles and status
+            document.getElementById("start").classList.add("recording");
+            document.getElementById("status").innerText = "🎤 Recording...";
+            document.getElementById("status").style.color = "red";
+
+            document.getElementById("start").disabled = true;
+            document.getElementById("stop").disabled = false;
+        });
+
+        document.getElementById("stop").addEventListener("click", () => {
+            mediaRecorder.stop();
+
+            // Update button styles and status
+            document.getElementById("start").classList.remove("recording");
+            document.getElementById("status").innerText = "✅ Stopped Recording";
+            document.getElementById("status").style.color = "#43A047"; // Green color
+
+            document.getElementById("start").disabled = false;
+            document.getElementById("stop").disabled = true;
+        });
+    </script>
+
+</body>
+</html>
